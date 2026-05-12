@@ -4,18 +4,33 @@ import { EmptyState, Spinner } from '../../components/components.jsx';
 import { COLORS } from '../../components/theme.js';
 import { confirm, toast } from '../../helpers/alerts.js';
 import { tidApi } from '../../services/tid.js';
-import { ClipboardList, RefreshCw, Trash2 } from 'lucide-react';
+import { ClipboardList, RefreshCw, Trash2, CheckCircle, Clock, BookOpen } from 'lucide-react';
 
 export default function RegistrationManagementPage() {
   const revalidator = useRevalidator();
   const { session } = useRouteLoaderData('root');
   const { cursos, inscripciones } = useLoaderData();
 
+  const SURA_COLORS = {
+    azulVivo: '#2D6DF6',
+    azulSura: '#0033A0',
+    aqua: '#D5F5F8',
+    gris: '#F2F2F2'
+  };
+
   const cursoById = React.useMemo(() => {
     const m = new Map();
     cursos.forEach((c) => m.set(c.id, c));
     return m;
   }, [cursos]);
+
+  const stats = React.useMemo(() => {
+    return {
+      total: inscripciones.length,
+      enProgreso: inscripciones.filter(i => (i.progreso || 0) > 0 && (i.progreso || 0) < 100).length,
+      completados: inscripciones.filter(i => (i.progreso || 0) >= 100).length
+    };
+  }, [inscripciones]);
 
   const handleCancel = async (insc) => {
     const curso = cursoById.get(insc.curso_id);
@@ -40,14 +55,46 @@ export default function RegistrationManagementPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div className="page-header" style={{ margin: 0 }}>
-          <h2>Inscripciones</h2>
-          <p>{session.nombre}</p>
+          <h2 style={{ color: SURA_COLORS.azulSura }}>Mis Cursos</h2>
+          <p>Bienvenido, {session.nombre}</p>
         </div>
-        <button className="btn btn-secondary" onClick={() => revalidator.revalidate()} disabled={revalidator.state !== 'idle'}>
+        <button className="btn btn-secondary" onClick={() => revalidator.revalidate()}>
           <RefreshCw size={16} /> Actualizar
         </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', borderLeft: `5px solid ${SURA_COLORS.azulSura}` }}>
+          <div style={{ background: '#E6EEFF', padding: '10px', borderRadius: '8px' }}>
+            <BookOpen color={SURA_COLORS.azulSura} size={24} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '14px', color: COLORS.textMuted }}>Total Inscritos</p>
+            <h3 style={{ margin: 0, fontSize: '24px' }}>{stats.total}</h3>
+          </div>
+        </div>
+
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', borderLeft: `5px solid ${SURA_COLORS.azulVivo}` }}>
+          <div style={{ background: '#EAF2FF', padding: '10px', borderRadius: '8px' }}>
+            <Clock color={SURA_COLORS.azulVivo} size={24} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '14px', color: COLORS.textMuted }}>En Progreso</p>
+            <h3 style={{ margin: 0, fontSize: '24px' }}>{stats.enProgreso}</h3>
+          </div>
+        </div>
+
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', borderLeft: `5px solid #00C389` }}>
+          <div style={{ background: '#E6FFF7', padding: '10px', borderRadius: '8px' }}>
+            <CheckCircle color="#00C389" size={24} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '14px', color: COLORS.textMuted }}>Completados</p>
+            <h3 style={{ margin: 0, fontSize: '24px' }}>{stats.completados}</h3>
+          </div>
+        </div>
       </div>
 
       <div className="card">
@@ -55,10 +102,10 @@ export default function RegistrationManagementPage() {
           <thead>
             <tr>
               <th>Curso</th>
-              <th>Fecha</th>
+              <th>Fecha de Inscripción</th>
               <th>Estado</th>
               <th>Progreso</th>
-              <th style={{ width: 1 }}></th>
+              <th style={{ width: 1 }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -74,13 +121,19 @@ export default function RegistrationManagementPage() {
                   <td style={{ minWidth: 220 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div className="progress-bar-bg" style={{ flex: 1 }}>
-                        <div className="progress-bar-fill" style={{ width: (i.progreso || 0) + '%', background: (i.progreso || 0) >= 100 ? COLORS.success : COLORS.accent }}></div>
+                        <div 
+                          className="progress-bar-fill" 
+                          style={{ 
+                            width: `${i.progreso || 0}%`, 
+                            background: (i.progreso || 0) >= 100 ? '#00C389' : SURA_COLORS.azulVivo 
+                          }}
+                        ></div>
                       </div>
-                      <span style={{ fontSize: 12, color: COLORS.textMuted, minWidth: 36, textAlign: 'right' }}>{i.progreso || 0}%</span>
+                      <span style={{ fontSize: 12, color: COLORS.textMuted }}>{i.progreso || 0}%</span>
                     </div>
                   </td>
                   <td>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleCancel(i)} style={{ padding: '6px 10px' }}>
+                    <button className="btn btn-danger btn-sm" onClick={() => handleCancel(i)}>
                       <Trash2 size={14} />
                     </button>
                   </td>
@@ -93,4 +146,3 @@ export default function RegistrationManagementPage() {
     </div>
   );
 }
-
