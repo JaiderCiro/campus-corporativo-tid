@@ -1,15 +1,19 @@
 import React from 'react';
-import { useLoaderData, useRevalidator, useRouteLoaderData } from 'react-router-dom';
+import { useLoaderData, useRevalidator, useRouteLoaderData, useNavigate } from 'react-router-dom';
 import { EmptyState, Spinner } from '../../components/components.jsx';
 import { COLORS } from '../../components/theme.js';
 import { confirm, toast } from '../../helpers/alerts.js';
 import { tidApi } from '../../services/tid.js';
-import { ClipboardList, RefreshCw, Trash2, CheckCircle, Clock, BookOpen } from 'lucide-react';
+import { ClipboardList, RefreshCw, Trash2, CheckCircle, Clock, BookOpen, Plus } from 'lucide-react';
 
 export default function RegistrationManagementPage() {
   const revalidator = useRevalidator();
+  const navigate = useNavigate();
   const { session } = useRouteLoaderData('root');
   const { cursos, inscripciones } = useLoaderData();
+
+  // 3. Estado para el buscador (Valor Agregado 2)
+  const [search, setSearch] = React.useState('');
 
   const SURA_COLORS = {
     azulVivo: '#2D6DF6',
@@ -23,6 +27,14 @@ export default function RegistrationManagementPage() {
     cursos.forEach((c) => m.set(c.id, c));
     return m;
   }, [cursos]);
+
+  // 4. Filtramos las inscripciones según lo que el usuario escriba
+  const filteredInscripciones = React.useMemo(() => {
+    return inscripciones.filter(i => {
+      const curso = cursoById.get(i.curso_id);
+      return curso?.titulo.toLowerCase().includes(search.toLowerCase());
+    });
+  }, [inscripciones, search, cursoById]);
 
   const stats = React.useMemo(() => {
     return {
@@ -60,11 +72,24 @@ export default function RegistrationManagementPage() {
           <h2 style={{ color: SURA_COLORS.azulSura }}>Mis Cursos</h2>
           <p>Bienvenido, {session.nombre}</p>
         </div>
-        <button className="btn btn-secondary" onClick={() => revalidator.revalidate()}>
-          <RefreshCw size={16} /> Actualizar
-        </button>
+        
+        {/* 5. BLOQUE DE BOTONES: Aquí va la simulación */}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => navigate('/registration-management/1/process')}
+            style={{ background: SURA_COLORS.azulVivo, display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Plus size={16} /> Simular Inscripción
+          </button>
+          
+          <button className="btn btn-secondary" onClick={() => revalidator.revalidate()}>
+            <RefreshCw size={16} /> Actualizar
+          </button>
+        </div>
       </div>
 
+      {/* DASHBOARD DE ESTADÍSTICAS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '30px' }}>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', borderLeft: `5px solid ${SURA_COLORS.azulSura}` }}>
           <div style={{ background: '#E6EEFF', padding: '10px', borderRadius: '8px' }}>
@@ -97,6 +122,18 @@ export default function RegistrationManagementPage() {
         </div>
       </div>
 
+      {/* 6. INPUT DEL BUSCADOR (Valor Agregado 2) */}
+      <div style={{ marginBottom: '20px' }}>
+        <input 
+          type="text" 
+          className="form-control"
+          placeholder="Buscar curso por nombre..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ border: `1px solid ${SURA_COLORS.azulVivo}`, borderRadius: '8px' }}
+        />
+      </div>
+
       <div className="card">
         <table className="table">
           <thead>
@@ -109,7 +146,8 @@ export default function RegistrationManagementPage() {
             </tr>
           </thead>
           <tbody>
-            {inscripciones.map((i) => {
+            {/* 7. Usamos 'filteredInscripciones' en lugar de 'inscripciones' */}
+            {filteredInscripciones.map((i) => {
               const curso = cursoById.get(i.curso_id);
               return (
                 <tr key={i.id}>
