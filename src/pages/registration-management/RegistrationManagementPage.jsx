@@ -12,7 +12,6 @@ export default function RegistrationManagementPage() {
   const { session } = useRouteLoaderData('root');
   const { cursos, inscripciones } = useLoaderData();
 
-  // 3. Estado para el buscador (Valor Agregado 2)
   const [search, setSearch] = React.useState('');
 
   const SURA_COLORS = {
@@ -28,7 +27,6 @@ export default function RegistrationManagementPage() {
     return m;
   }, [cursos]);
 
-  // 4. Filtramos las inscripciones según lo que el usuario escriba
   const filteredInscripciones = React.useMemo(() => {
     return inscripciones.filter(i => {
       const curso = cursoById.get(i.curso_id);
@@ -73,7 +71,6 @@ export default function RegistrationManagementPage() {
           <p>Bienvenido, {session.nombre}</p>
         </div>
         
-        {/* 5. BLOQUE DE BOTONES: Aquí va la simulación */}
         <div style={{ display: 'flex', gap: '10px' }}>
           <button 
             className="btn btn-primary" 
@@ -89,7 +86,6 @@ export default function RegistrationManagementPage() {
         </div>
       </div>
 
-      {/* DASHBOARD DE ESTADÍSTICAS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '30px' }}>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', borderLeft: `5px solid ${SURA_COLORS.azulSura}` }}>
           <div style={{ background: '#E6EEFF', padding: '10px', borderRadius: '8px' }}>
@@ -122,7 +118,6 @@ export default function RegistrationManagementPage() {
         </div>
       </div>
 
-      {/* 6. INPUT DEL BUSCADOR (Valor Agregado 2) */}
       <div style={{ marginBottom: '20px' }}>
         <input 
           type="text" 
@@ -146,7 +141,6 @@ export default function RegistrationManagementPage() {
             </tr>
           </thead>
           <tbody>
-            {/* 7. Usamos 'filteredInscripciones' en lugar de 'inscripciones' */}
             {filteredInscripciones.map((i) => {
               const curso = cursoById.get(i.curso_id);
               return (
