@@ -34,7 +34,7 @@ export default function RegistrationManagementPage() {
     });
   }, [inscripciones, search, cursoById]);
 
-  const stats = React.useMemo(() => {
+  const stats = React.useMemo(() => {686
     return {
       total: inscripciones.length,
       enProgreso: inscripciones.filter(i => (i.progreso || 0) > 0 && (i.progreso || 0) < 100).length,
@@ -72,13 +72,13 @@ export default function RegistrationManagementPage() {
         </div>
         
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button 
-            className="btn btn-primary" 
-            onClick={() => navigate('/registration-management/1/process')}
-            style={{ background: SURA_COLORS.azulVivo, display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <Plus size={16} /> Simular Inscripción
-          </button>
+        <button 
+        className="btn btn-primary" 
+        onClick={() => navigate('/course-catalog')}
+        style={{ background: SURA_COLORS.azulVivo, display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+        <Plus size={16} /> Inscribirse en un curso
+        </button>
           
           <button className="btn btn-secondary" onClick={() => revalidator.revalidate()}>
             <RefreshCw size={16} /> Actualizar
