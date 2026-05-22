@@ -270,7 +270,7 @@ export default function RegistrationManagementPage() {
                           className="progress-bar-fill"
                           style={{
                             width: `${i.progreso || 0}%`,
-                            background: (i.progreso || 0) >= 100 ? '#00C389' : SURA_COLORS.azulVivo
+                            background: (i.progreso || 0) >= 100 ? '#00C389' : i.estado === 'En Progreso' ? '#f59e0b' : SURA_COLORS.azulVivo
                           }}
                         ></div>
                       </div>
