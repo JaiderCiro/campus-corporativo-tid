@@ -4,7 +4,7 @@ import { EmptyState, Modal, Spinner } from '../../components/components.jsx';
 import { COLORS } from '../../components/theme.js';
 import { confirm, toast } from '../../helpers/alerts.js';
 import { tidApi } from '../../services/tid.js';
-import { ClipboardList, RefreshCw, Trash2, CheckCircle, Clock, BookOpen, Plus, Pencil } from 'lucide-react';
+import { ClipboardList, RefreshCw, Trash2, CheckCircle, Clock, BookOpen, Plus, Pencil, Search, X } from 'lucide-react';
 
 export default function RegistrationManagementPage() {
   const revalidator = useRevalidator();
@@ -172,14 +172,22 @@ export default function RegistrationManagementPage() {
 
       <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
   
+      <div className="search-box">
+  <Search size={16} color={COLORS.textMuted} />
   <input
-    type="text"
-    className="form-control"
     placeholder="Buscar curso por nombre..."
     value={search}
     onChange={(e) => setSearch(e.target.value)}
-    style={{ border: `1px solid ${SURA_COLORS.azulVivo}`, borderRadius: '8px' }}
   />
+  {search && (
+    <button
+      onClick={() => setSearch('')}
+      style={{ background: 'none', border: 'none', color: COLORS.textMuted, cursor: 'pointer' }}
+    >
+      <X size={16} />
+    </button>
+  )}
+</div>
 
   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
     {['Todos', 'Activo', 'En Progreso', 'Completado'].map((estado) => {
