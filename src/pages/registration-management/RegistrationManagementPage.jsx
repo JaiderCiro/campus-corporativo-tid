@@ -1,10 +1,10 @@
 import React from 'react';
 import { useLoaderData, useRevalidator, useRouteLoaderData, useNavigate } from 'react-router-dom';
-import { EmptyState, Spinner } from '../../components/components.jsx';
+import { EmptyState, Modal, Spinner } from '../../components/components.jsx';
 import { COLORS } from '../../components/theme.js';
 import { confirm, toast } from '../../helpers/alerts.js';
 import { tidApi } from '../../services/tid.js';
-import { ClipboardList, RefreshCw, Trash2, CheckCircle, Clock, BookOpen, Plus } from 'lucide-react';
+import { ClipboardList, RefreshCw, Trash2, CheckCircle, Clock, BookOpen, Plus, Pencil } from 'lucide-react';
 
 export default function RegistrationManagementPage() {
   const revalidator = useRevalidator();
@@ -14,11 +14,38 @@ export default function RegistrationManagementPage() {
 
   const [search, setSearch] = React.useState('');
 
+  const [modalEdit, setModalEdit] = React.useState(null);
+  const [editForm, setEditForm] = React.useState({ progreso: 0, estado: 'Activo' });
+  const [saving, setSaving] = React.useState(false);
+
   const SURA_COLORS = {
     azulVivo: '#2D6DF6',
     azulSura: '#0033A0',
     aqua: '#D5F5F8',
     gris: '#F2F2F2'
+  };
+
+  const openEdit = (insc) => {
+    setEditForm({ progreso: insc.progreso || 0, estado: insc.estado || 'Activo' });
+    setModalEdit(insc);
+  };
+
+  const handleUpdate = async () => {
+    setSaving(true);
+    try {
+      await tidApi.updateInscripcion(modalEdit.id, {
+        ...modalEdit,
+        progreso: parseInt(editForm.progreso),
+        estado: editForm.estado,
+      });
+      toast.success('Inscripción actualizada');
+      setModalEdit(null);
+      revalidator.revalidate();
+    } catch (e) {
+      toast.error(e.message || 'Error al actualizar');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const cursoById = React.useMemo(() => {
@@ -34,7 +61,7 @@ export default function RegistrationManagementPage() {
     });
   }, [inscripciones, search, cursoById]);
 
-  const stats = React.useMemo(() => {686
+  const stats = React.useMemo(() => {
     return {
       total: inscripciones.length,
       enProgreso: inscripciones.filter(i => (i.progreso || 0) > 0 && (i.progreso || 0) < 100).length,
@@ -70,16 +97,16 @@ export default function RegistrationManagementPage() {
           <h2 style={{ color: SURA_COLORS.azulSura }}>Mis Cursos</h2>
           <p>Bienvenido, {session.nombre}</p>
         </div>
-        
+
         <div style={{ display: 'flex', gap: '10px' }}>
-        <button 
-        className="btn btn-primary" 
-        onClick={() => navigate('/course-catalog')}
-        style={{ background: SURA_COLORS.azulVivo, display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
-        <Plus size={16} /> Inscribirse en un curso
-        </button>
-          
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate('/course-catalog')}
+            style={{ background: SURA_COLORS.azulVivo, display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Plus size={16} /> Inscribirse en un curso
+          </button>
+
           <button className="btn btn-secondary" onClick={() => revalidator.revalidate()}>
             <RefreshCw size={16} /> Actualizar
           </button>
@@ -119,8 +146,8 @@ export default function RegistrationManagementPage() {
       </div>
 
       <div style={{ marginBottom: '20px' }}>
-        <input 
-          type="text" 
+        <input
+          type="text"
           className="form-control"
           placeholder="Buscar curso por nombre..."
           value={search}
@@ -148,16 +175,18 @@ export default function RegistrationManagementPage() {
                   <td style={{ fontWeight: 700 }}>{curso?.titulo || 'Curso'}</td>
                   <td style={{ color: COLORS.textMuted }}>{i.fecha}</td>
                   <td>
-                    <span className={`badge ${i.estado === 'Completado' ? 'badge-green' : 'badge-blue'}`}>{i.estado}</span>
+                    <span className={`badge ${i.estado === 'Completado' ? 'badge-green' : i.estado === 'En Progreso' ? 'badge-blue' : 'badge-blue'}`}>
+                      {i.estado}
+                    </span>
                   </td>
                   <td style={{ minWidth: 220 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div className="progress-bar-bg" style={{ flex: 1 }}>
-                        <div 
-                          className="progress-bar-fill" 
-                          style={{ 
-                            width: `${i.progreso || 0}%`, 
-                            background: (i.progreso || 0) >= 100 ? '#00C389' : SURA_COLORS.azulVivo 
+                        <div
+                          className="progress-bar-fill"
+                          style={{
+                            width: `${i.progreso || 0}%`,
+                            background: (i.progreso || 0) >= 100 ? '#00C389' : SURA_COLORS.azulVivo
                           }}
                         ></div>
                       </div>
@@ -165,9 +194,14 @@ export default function RegistrationManagementPage() {
                     </div>
                   </td>
                   <td>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleCancel(i)}>
-                      <Trash2 size={14} />
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => openEdit(i)}>
+                        <Pencil size={14} />
+                      </button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleCancel(i)}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -175,6 +209,67 @@ export default function RegistrationManagementPage() {
           </tbody>
         </table>
       </div>
+
+      <Modal
+        open={!!modalEdit}
+        onClose={() => setModalEdit(null)}
+        title={`Editar — ${cursoById.get(modalEdit?.curso_id)?.titulo || ''}`}
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setModalEdit(null)}>
+              Cancelar
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={handleUpdate}
+              disabled={saving}
+              style={{ background: SURA_COLORS.azulVivo }}
+            >
+              {saving ? <Spinner sm /> : 'Guardar cambios'}
+            </button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Estado
+            </label>
+            <select
+              className="form-input"
+              value={editForm.estado}
+              onChange={(e) => setEditForm(p => ({ ...p, estado: e.target.value }))}
+            >
+              <option value="Activo">Activo</option>
+              <option value="En Progreso">En Progreso</option>
+              <option value="Completado">Completado</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Progreso: <span style={{ color: SURA_COLORS.azulVivo }}>{editForm.progreso}%</span>
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              value={editForm.progreso}
+              onChange={(e) => setEditForm(p => ({ ...p, progreso: e.target.value }))}
+              style={{ width: '100%', accentColor: SURA_COLORS.azulVivo }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#999' }}>
+              <span>0%</span>
+              <span>50%</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+        </div>
+      </Modal>
+
     </div>
   );
 }
