@@ -13,6 +13,7 @@ export default function RegistrationManagementPage() {
   const { cursos, inscripciones } = useLoaderData();
 
   const [search, setSearch] = React.useState('');
+  const [filtroEstado, setFiltroEstado] = React.useState('Todos');
 
   const [modalEdit, setModalEdit] = React.useState(null);
   const [editForm, setEditForm] = React.useState({ progreso: 0, estado: 'Activo' });
@@ -55,11 +56,13 @@ export default function RegistrationManagementPage() {
   }, [cursos]);
 
   const filteredInscripciones = React.useMemo(() => {
-    return inscripciones.filter(i => {
-      const curso = cursoById.get(i.curso_id);
-      return curso?.titulo.toLowerCase().includes(search.toLowerCase());
-    });
-  }, [inscripciones, search, cursoById]);
+  return inscripciones.filter(i => {
+    const curso = cursoById.get(i.curso_id);
+    const coincideBusqueda = curso?.titulo.toLowerCase().includes(search.toLowerCase());
+    const coincideEstado = filtroEstado === 'Todos' || i.estado === filtroEstado;
+    return coincideBusqueda && coincideEstado;
+  });
+}, [inscripciones, search, filtroEstado, cursoById]);
 
   const stats = React.useMemo(() => {
     return {
@@ -145,16 +148,60 @@ export default function RegistrationManagementPage() {
         </div>
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Buscar curso por nombre..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ border: `1px solid ${SURA_COLORS.azulVivo}`, borderRadius: '8px' }}
-        />
-      </div>
+      <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+  
+  <input
+    type="text"
+    className="form-control"
+    placeholder="Buscar curso por nombre..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    style={{ border: `1px solid ${SURA_COLORS.azulVivo}`, borderRadius: '8px' }}
+  />
+
+  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+    {['Todos', 'Activo', 'En Progreso', 'Completado'].map((estado) => {
+      const activo = filtroEstado === estado;
+      const colores = {
+        'Todos':       { bg: '#0033A0', text: '#fff' },
+        'Activo':      { bg: '#2D6DF6', text: '#fff' },
+        'En Progreso': { bg: '#f59e0b', text: '#fff' },
+        'Completado':  { bg: '#00C389', text: '#fff' },
+      };
+      return (
+        <button
+          key={estado}
+          onClick={() => setFiltroEstado(estado)}
+          style={{
+            padding: '6px 16px',
+            borderRadius: '20px',
+            border: `2px solid ${colores[estado].bg}`,
+            background: activo ? colores[estado].bg : 'transparent',
+            color: activo ? colores[estado].text : colores[estado].bg,
+            fontWeight: 600,
+            fontSize: '13px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          {estado}
+          {estado !== 'Todos' && (
+            <span style={{
+              marginLeft: '6px',
+              background: activo ? 'rgba(255,255,255,0.3)' : colores[estado].bg,
+              color: activo ? colores[estado].text : '#fff',
+              borderRadius: '10px',
+              padding: '1px 7px',
+              fontSize: '11px',
+            }}>
+              {inscripciones.filter(i => i.estado === estado).length}
+            </span>
+          )}
+        </button>
+      );
+    })}
+  </div>
+  </div>
 
       <div className="card">
         <table className="table">
