@@ -90,8 +90,30 @@ export default function RegistrationManagementPage() {
   if (revalidator.state !== 'idle') return <Spinner text="Actualizando..." />;
 
   if (!inscripciones?.length) {
-    return <EmptyState icon={<ClipboardList size={44} color={COLORS.textMuted} />} title="Sin inscripciones" subtitle="Aún no tienes inscripciones registradas" />;
-  }
+  return (
+    <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+      <div style={{
+        background: '#E6EEFF', width: '80px', height: '80px', borderRadius: '50%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px'
+      }}>
+        <ClipboardList size={40} color={SURA_COLORS.azulSura} />
+      </div>
+      <h3 style={{ color: SURA_COLORS.azulSura, marginBottom: '10px' }}>
+        Sin inscripciones
+      </h3>
+      <p style={{ color: COLORS.textMuted, marginBottom: '30px', maxWidth: '360px', margin: '0 auto 30px' }}>
+        Aún no tienes cursos registrados. Explora el catálogo y empieza a aprender hoy.
+      </p>
+      <button
+        className="btn btn-primary"
+        onClick={() => navigate('/course-catalog')}
+        style={{ background: SURA_COLORS.azulVivo, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+      >
+        <BookOpen size={16} /> Explorar catálogo
+      </button>
+    </div>
+  );
+}
 
   return (
     <div>
@@ -222,9 +244,16 @@ export default function RegistrationManagementPage() {
                   <td style={{ fontWeight: 700 }}>{curso?.titulo || 'Curso'}</td>
                   <td style={{ color: COLORS.textMuted }}>{i.fecha}</td>
                   <td>
-                    <span className={`badge ${i.estado === 'Completado' ? 'badge-green' : i.estado === 'En Progreso' ? 'badge-blue' : 'badge-blue'}`}>
-                      {i.estado}
-                    </span>
+                    <span style={{
+                      padding: '3px 10px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      background: i.estado === 'Completado' ? '#d1fae5' : i.estado === 'En Progreso' ? '#fef3c7' : '#dbeafe',
+                      color:      i.estado === 'Completado' ? '#065f46' : i.estado === 'En Progreso' ? '#92400e' : '#1e40af',
+                    }}>
+                    {i.estado}
+                  </span>
                   </td>
                   <td style={{ minWidth: 220 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -293,7 +322,6 @@ export default function RegistrationManagementPage() {
               <option value="Completado">Completado</option>
             </select>
           </div>
-
           <div>
             <label style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', display: 'block' }}>
               Progreso: <span style={{ color: SURA_COLORS.azulVivo }}>{editForm.progreso}%</span>
@@ -313,10 +341,8 @@ export default function RegistrationManagementPage() {
               <span>100%</span>
             </div>
           </div>
-
         </div>
       </Modal>
-
     </div>
   );
 }
