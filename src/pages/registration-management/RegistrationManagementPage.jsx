@@ -315,7 +315,7 @@ export default function RegistrationManagementPage() {
               disabled={saving}
               style={{ background: SURA_COLORS.azulVivo }}
             >
-              {saving ? <Spinner sm /> : 'Guardar cambios'}
+              {saving ? <div className="spinner" style={{ width: 14, height: 14, borderTopColor: '#fff' }}></div> : 'Guardar cambios'}
             </button>
           </>
         }
@@ -373,7 +373,7 @@ export default function RegistrationManagementPage() {
               onClick={confirmCancel}
               disabled={canceling}
             >
-              {canceling ? <Spinner /> : 'Confirmar cancelación'}
+              {canceling ? <div className="spinner" style={{ width: 14, height: 14, borderTopColor: '#fff' }}></div> : 'Confirmar cancelación'}
             </button>
           </>
         }

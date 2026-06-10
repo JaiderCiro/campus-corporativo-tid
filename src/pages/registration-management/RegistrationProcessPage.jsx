@@ -373,7 +373,7 @@ export default function RegistrationProcessPage() {
                 disabled={loading}
                 style={{ background: '#2D6DF6' }}
               >
-                {loading ? <Spinner /> : 'Continuar'}
+                {loading ? <div className="spinner" style={{ width: 14, height: 14, borderTopColor: '#fff' }}></div> : 'Continuar'}
               </button>
             </div>
           </div>
