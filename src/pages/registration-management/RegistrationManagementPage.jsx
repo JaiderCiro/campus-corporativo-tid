@@ -18,6 +18,8 @@ export default function RegistrationManagementPage() {
   const [modalEdit, setModalEdit] = React.useState(null);
   const [editForm, setEditForm] = React.useState({ progreso: 0, estado: 'Activo' });
   const [saving, setSaving] = React.useState(false);
+  const [modalCancel, setModalCancel] = React.useState(null);
+  const [canceling, setCanceling] = React.useState(false);
 
   const SURA_COLORS = {
     azulVivo: '#2D6DF6',
@@ -72,19 +74,23 @@ export default function RegistrationManagementPage() {
     };
   }, [inscripciones]);
 
-  const handleCancel = async (insc) => {
-    const curso = cursoById.get(insc.curso_id);
-    const ok = await confirm({
-      title: 'Cancelar inscripción',
-      message: curso ? `Curso: ${curso.titulo}` : '¿Deseas cancelar esta inscripción?',
-      okText: 'Cancelar inscripción',
-      cancelText: 'Volver',
-      color: COLORS.danger,
-    });
-    if (!ok) return;
-    await tidApi.deleteInscripcion(insc.id);
-    toast.success('Inscripción cancelada');
-    revalidator.revalidate();
+  const handleCancel = (insc) => {
+    setModalCancel(insc);
+  };
+
+  const confirmCancel = async () => {
+    if (!modalCancel) return;
+    setCanceling(true);
+    try {
+      await tidApi.deleteInscripcion(modalCancel.id);
+      toast.success('Inscripción cancelada');
+      setModalCancel(null);
+      revalidator.revalidate();
+    } catch (e) {
+      toast.error(e.message || 'No se pudo cancelar la inscripción');
+    } finally {
+      setCanceling(false);
+    }
   };
 
   if (revalidator.state !== 'idle') return <Spinner text="Actualizando..." />;
@@ -350,6 +356,58 @@ export default function RegistrationManagementPage() {
             </div>
           </div>
         </div>
+      </Modal>
+
+      {/* Modal de Confirmación de Cancelación */}
+      <Modal
+        open={!!modalCancel}
+        onClose={() => setModalCancel(null)}
+        title="Cancelar Inscripción"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setModalCancel(null)} disabled={canceling}>
+              Volver
+            </button>
+            <button
+              className="btn btn-danger"
+              onClick={confirmCancel}
+              disabled={canceling}
+            >
+              {canceling ? <Spinner /> : 'Confirmar cancelación'}
+            </button>
+          </>
+        }
+      >
+        {modalCancel && (() => {
+          const curso = cursoById.get(modalCancel.curso_id);
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'center', padding: '10px 0' }}>
+              <div style={{
+                background: '#FEE2E2', width: '60px', height: '60px', borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto'
+              }}>
+                <Trash2 color={COLORS.danger} size={30} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: COLORS.textPrimary, marginBottom: '8px' }}>
+                  ¿Estás seguro de cancelar tu inscripción?
+                </h3>
+                <p style={{ color: COLORS.textSecondary, fontSize: '14px', lineHeight: '1.5' }}>
+                  Perderás el progreso actual del curso y tu cupo será liberado para otros estudiantes.
+                </p>
+              </div>
+              {curso && (
+                <div style={{ background: COLORS.surface2, borderRadius: '8px', padding: '12px 16px', textAlign: 'left', borderLeft: `4px solid ${COLORS.danger}` }}>
+                  <div style={{ fontSize: '12px', color: COLORS.textMuted }}>Curso a cancelar:</div>
+                  <div style={{ fontWeight: 600, color: COLORS.textPrimary, fontSize: '15px' }}>{curso.titulo}</div>
+                  <div style={{ fontSize: '12px', color: COLORS.textSecondary, marginTop: '4px' }}>
+                    Instructor: {curso.instructor} · Progreso: {modalCancel.progreso || 0}%
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </Modal>
     </div>
   );
