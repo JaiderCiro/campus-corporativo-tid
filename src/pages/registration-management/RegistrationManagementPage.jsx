@@ -20,6 +20,7 @@ export default function RegistrationManagementPage() {
   const [saving, setSaving] = React.useState(false);
   const [modalCancel, setModalCancel] = React.useState(null);
   const [canceling, setCanceling] = React.useState(false);
+  const [modalDetalle, setModalDetalle] = React.useState(null);
 
   const SURA_COLORS = {
     azulVivo: '#2D6DF6',
@@ -255,7 +256,14 @@ export default function RegistrationManagementPage() {
               const curso = cursoById.get(i.curso_id);
               return (
                 <tr key={i.id}>
-                  <td style={{ fontWeight: 700 }}>{curso?.titulo || 'Curso'}</td>
+                  <td 
+                    style={{ fontWeight: 700, cursor: 'pointer', color: SURA_COLORS.azulVivo }}
+                    onClick={() => setModalDetalle({ inscripcion: i, curso })}
+                    onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                  >
+                    {curso?.titulo || 'Curso'}
+                  </td>
                   <td style={{ color: COLORS.textMuted }}>{i.fecha}</td>
                   <td>
                     <span style={{
@@ -405,6 +413,100 @@ export default function RegistrationManagementPage() {
                   </div>
                 </div>
               )}
+            </div>
+          );
+        })()}
+      </Modal>
+
+      {/* Modal de Detalle del Curso Inscrito */}
+      <Modal
+        open={!!modalDetalle}
+        onClose={() => setModalDetalle(null)}
+        title="Detalle del Curso Inscrito"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setModalDetalle(null)}>
+              Cerrar
+            </button>
+            {modalDetalle && modalDetalle.inscripcion.progreso >= 100 && (
+              <button 
+                className="btn btn-success" 
+                onClick={() => {
+                  toast.success(`¡Certificado del curso "${modalDetalle.curso?.titulo}" generado con éxito! Iniciando descarga...`);
+                }}
+                style={{ background: '#00C389', color: '#fff' }}
+              >
+                Generar Certificado
+              </button>
+            )}
+          </>
+        }
+      >
+        {modalDetalle && (() => {
+          const { inscripcion, curso } = modalDetalle;
+          const fechaInicio = inscripcion.fecha;
+          const fechaFin = (() => {
+            if (!fechaInicio) return 'N/A';
+            const d = new Date(fechaInicio + 'T12:00:00'); // avoid timezone offsets
+            d.setDate(d.getDate() + 30);
+            return d.toISOString().split('T')[0];
+          })();
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ borderBottom: `1px solid ${COLORS.border}`, paddingBottom: '15px' }}>
+                <h3 style={{ color: SURA_COLORS.azulSura, fontSize: '18px', fontWeight: 700, marginBottom: '4px' }}>
+                  {curso?.titulo}
+                </h3>
+                <span className="badge badge-gray">{curso?.nivel}</span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: COLORS.textMuted, marginBottom: '2px' }}>Alumno Inscrito</div>
+                  <div style={{ fontWeight: 600, color: COLORS.textPrimary }}>{session.nombre}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '12px', color: COLORS.textMuted, marginBottom: '2px' }}>Instructor(a)</div>
+                  <div style={{ fontWeight: 600, color: COLORS.textPrimary }}>{curso?.instructor}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '12px', color: COLORS.textMuted, marginBottom: '2px' }}>Fecha de Inicio</div>
+                  <div style={{ fontWeight: 600, color: COLORS.textPrimary }}>{fechaInicio}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '12px', color: COLORS.textMuted, marginBottom: '2px' }}>Fecha de Fin (Estimada)</div>
+                  <div style={{ fontWeight: 600, color: COLORS.textPrimary }}>{fechaFin}</div>
+                </div>
+              </div>
+
+              <div style={{ background: COLORS.surface2, borderRadius: '12px', padding: '16px', marginTop: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: 600, color: COLORS.textSecondary, fontSize: '13px' }}>Progreso del Curso</span>
+                  <span style={{ fontWeight: 700, color: inscripcion.progreso >= 100 ? '#00C389' : SURA_COLORS.azulVivo }}>
+                    {inscripcion.progreso || 0}%
+                  </span>
+                </div>
+                <div className="progress-bar-bg" style={{ height: '8px' }}>
+                  <div
+                    className="progress-bar-fill"
+                    style={{
+                      width: `${inscripcion.progreso || 0}%`,
+                      background: inscripcion.progreso >= 100 ? '#00C389' : SURA_COLORS.azulVivo,
+                      height: '100%'
+                    }}
+                  ></div>
+                </div>
+                {inscripcion.progreso < 100 ? (
+                  <p style={{ fontSize: '11px', color: COLORS.textMuted, marginTop: '8px', fontStyle: 'italic' }}>
+                    * El certificado se habilitará automáticamente al completar el 100% de las lecciones del curso.
+                  </p>
+                ) : (
+                  <p style={{ fontSize: '11px', color: '#00C389', marginTop: '8px', fontWeight: 600 }}>
+                    ✓ ¡Curso completado! Ya puedes descargar tu certificado de participación.
+                  </p>
+                )}
+              </div>
             </div>
           );
         })()}
