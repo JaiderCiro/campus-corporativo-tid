@@ -6,6 +6,13 @@ import { confirm, toast } from '../../helpers/alerts.js';
 import { tidApi } from '../../services/tid.js';
 import { ClipboardList, RefreshCw, Trash2, CheckCircle, Clock, BookOpen, Plus, Pencil, Search, X } from 'lucide-react';
 
+const getEstadoReal = (insc) => {
+  const prog = insc.progreso || 0;
+  if (prog >= 100) return 'Completado';
+  if (prog > 0) return 'En Progreso';
+  return 'Activo';
+};
+
 export default function RegistrationManagementPage() {
   const revalidator = useRevalidator();
   const navigate = useNavigate();
@@ -37,10 +44,16 @@ export default function RegistrationManagementPage() {
   const handleUpdate = async () => {
     setSaving(true);
     try {
+      const nuevoProgreso = parseInt(editForm.progreso);
+      let nuevoEstado = editForm.estado;
+      if (nuevoProgreso >= 100) nuevoEstado = 'Completado';
+      else if (nuevoProgreso > 0) nuevoEstado = 'En Progreso';
+      else nuevoEstado = 'Activo';
+
       await tidApi.updateInscripcion(modalEdit.id, {
         ...modalEdit,
-        progreso: parseInt(editForm.progreso),
-        estado: editForm.estado,
+        progreso: nuevoProgreso,
+        estado: nuevoEstado,
       });
       toast.success('Inscripción actualizada');
       setModalEdit(null);
@@ -59,13 +72,13 @@ export default function RegistrationManagementPage() {
   }, [cursos]);
 
   const filteredInscripciones = React.useMemo(() => {
-  return inscripciones.filter(i => {
-    const curso = cursoById.get(i.curso_id);
-    const coincideBusqueda = curso?.titulo.toLowerCase().includes(search.toLowerCase());
-    const coincideEstado = filtroEstado === 'Todos' || i.estado === filtroEstado;
-    return coincideBusqueda && coincideEstado;
-  });
-}, [inscripciones, search, filtroEstado, cursoById]);
+    return inscripciones.filter(i => {
+      const curso = cursoById.get(i.curso_id);
+      const coincideBusqueda = curso?.titulo.toLowerCase().includes(search.toLowerCase());
+      const coincideEstado = filtroEstado === 'Todos' || getEstadoReal(i) === filtroEstado;
+      return coincideBusqueda && coincideEstado;
+    });
+  }, [inscripciones, search, filtroEstado, cursoById]);
 
   const stats = React.useMemo(() => {
     return {
@@ -74,6 +87,234 @@ export default function RegistrationManagementPage() {
       completados: inscripciones.filter(i => (i.progreso || 0) >= 100).length
     };
   }, [inscripciones]);
+
+
+
+  const handleGenerateCertificate = (inscripcion, curso) => {
+    const studentName = session.nombre;
+    const courseTitle = curso?.titulo || 'Curso';
+    const instructorName = curso?.instructor || 'Instructor';
+
+    const win = window.open('', '_blank');
+    if (!win) {
+      toast.error('No se pudo abrir la ventana del certificado. Por favor, permite las ventanas emergentes.');
+      return;
+    }
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Certificado - ${courseTitle}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap');
+    @page { size: landscape; margin: 0; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'DM Sans', sans-serif;
+      background-color: #f8fafc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      -webkit-print-color-adjust: exact;
+    }
+    .certificate-container {
+      width: 297mm;
+      height: 210mm;
+      background: #ffffff;
+      padding: 20mm;
+      box-sizing: border-box;
+      border: 15px double #0033A0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      text-align: center;
+    }
+    .certificate-container::before {
+      content: '';
+      position: absolute;
+      top: 10px; left: 10px; right: 10px; bottom: 10px;
+      border: 2px solid #2D6DF6;
+      pointer-events: none;
+    }
+    .header {
+      margin-top: 10px;
+    }
+    .logo {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0033A0;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .title {
+      font-size: 36px;
+      font-family: Georgia, serif;
+      color: #0f172a;
+      margin: 25px 0 10px 0;
+      letter-spacing: 1px;
+    }
+    .presented-to {
+      font-size: 16px;
+      color: #64748b;
+      margin-bottom: 5px;
+    }
+    .student-name {
+      font-size: 32px;
+      font-weight: 700;
+      color: #0033A0;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 10px;
+      min-width: 60%;
+      display: inline-block;
+      margin-bottom: 25px;
+    }
+    .description {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #334155;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .course-title {
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .footer-section {
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      margin-top: 40px;
+      margin-bottom: 10px;
+    }
+    .signature-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 220px;
+    }
+    .signature-line {
+      width: 100%;
+      border-top: 1px solid #94a3b8;
+      margin-top: 8px;
+      padding-top: 6px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .signature-name {
+      font-weight: 600;
+      color: #0f172a;
+      font-size: 14px;
+    }
+    .stamp-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .sello-tid {
+      width: 90px;
+      height: 90px;
+      border: 4px double #0033A0;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #0033A0;
+      font-size: 10px;
+      transform: rotate(-10deg);
+      background: rgba(213, 245, 248, 0.2);
+    }
+    .sello-tid span {
+      font-size: 8px;
+      font-weight: 400;
+      color: #2D6DF6;
+    }
+  </style>
+</head>
+<body>
+  <div class="certificate-container">
+    <div class="header">
+      <div class="logo">Campus Corporativo TID</div>
+      <div class="subtitle">Certificado de Finalización</div>
+    </div>
+    
+    <div>
+      <div class="title">CERTIFICADO DE PARTICIPACIÓN</div>
+      <div class="presented-to">Otorgado con orgullo a</div>
+      <div class="student-name">${studentName}</div>
+      <div class="description">
+        Por haber cursado y aprobado satisfactoriamente el programa de formación corporativa en
+        <br>
+        <span class="course-title">"${courseTitle}"</span>
+        <br>
+        bajo la instrucción de <strong>${instructorName}</strong>, cumpliendo con todos los requisitos académicos y prácticos exigidos.
+      </div>
+    </div>
+    
+    <div class="footer-section">
+      <div class="signature-box">
+        <div style="font-family: 'Georgia', cursive; font-size: 18px; color: #475569; font-style: italic; transform: rotate(-5deg); margin-bottom: -5px;">
+          ${instructorName}
+        </div>
+        <div class="signature-line">
+          <div class="signature-name">Instructor(a) del Curso</div>
+          Campus Corporativo TID
+        </div>
+      </div>
+
+      <div class="stamp-box">
+        <div class="sello-tid">
+          CAMPUS TID
+          <span>VERIFICADO</span>
+          <strong>2026</strong>
+        </div>
+      </div>
+
+      <div class="signature-box">
+        <div style="font-family: 'Georgia', cursive; font-size: 20px; color: #0033A0; font-style: italic; transform: rotate(-3deg); margin-bottom: -5px;">
+          Campus TID
+        </div>
+        <div class="signature-line">
+          <div class="signature-name">Firma del Instituto</div>
+          Sello de Calidad Académica
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.onload = function() {
+      window.print();
+      setTimeout(function() {
+        window.close();
+      }, 1000);
+    };
+  </script>
+</body>
+</html>
+    `;
+
+    win.document.open();
+    win.document.write(htmlContent);
+    win.document.close();
+    toast.success(`¡Certificado del curso "${courseTitle}" generado con éxito!`);
+  };
 
   const handleCancel = (insc) => {
     setModalCancel(insc);
@@ -231,7 +472,7 @@ export default function RegistrationManagementPage() {
               padding: '1px 7px',
               fontSize: '11px',
             }}>
-              {inscripciones.filter(i => i.estado === estado).length}
+              {inscripciones.filter(i => getEstadoReal(i) === estado).length}
             </span>
           )}
         </button>
@@ -266,16 +507,21 @@ export default function RegistrationManagementPage() {
                   </td>
                   <td style={{ color: COLORS.textMuted }}>{i.fecha}</td>
                   <td>
-                    <span style={{
-                      padding: '3px 10px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      background: i.estado === 'Completado' ? '#d1fae5' : i.estado === 'En Progreso' ? '#fef3c7' : '#dbeafe',
-                      color:      i.estado === 'Completado' ? '#065f46' : i.estado === 'En Progreso' ? '#92400e' : '#1e40af',
-                    }}>
-                    {i.estado}
-                  </span>
+                    {(() => {
+                      const est = getEstadoReal(i);
+                      return (
+                        <span style={{
+                          padding: '3px 10px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          background: est === 'Completado' ? '#d1fae5' : est === 'En Progreso' ? '#fef3c7' : '#dbeafe',
+                          color:      est === 'Completado' ? '#065f46' : est === 'En Progreso' ? '#92400e' : '#1e40af',
+                        }}>
+                          {est}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td style={{ minWidth: 220 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -432,7 +678,7 @@ export default function RegistrationManagementPage() {
               <button 
                 className="btn btn-success" 
                 onClick={() => {
-                  toast.success(`¡Certificado del curso "${modalDetalle.curso?.titulo}" generado con éxito! Iniciando descarga...`);
+                  handleGenerateCertificate(modalDetalle.inscripcion, modalDetalle.curso);
                 }}
                 style={{ background: '#00C389', color: '#fff' }}
               >
