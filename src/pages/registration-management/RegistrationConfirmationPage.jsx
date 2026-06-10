@@ -39,8 +39,8 @@ return (
         </div>
     )}
 
-    <p style={{ color: '#666', maxWidth: '400px', marginBottom: '30px', lineHeight: '1.6' }}>
-        Tu solicitud ha sido procesada correctamente. Ya puedes comenzar a disfrutar del contenido en tu panel personal.
+    <p style={{ color: '#666', maxWidth: '500px', marginBottom: '30px', lineHeight: '1.6', fontSize: '15px' }}>
+        Te has inscrito exitosamente en el curso <strong>{curso?.titulo || ''}</strong>. Por favor debes estar muy pendiente del correo electrónico donde recibirás la fecha de inicio y detalle de la programación.
     </p>
 
     <button
